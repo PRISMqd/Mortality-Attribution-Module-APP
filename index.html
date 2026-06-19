@@ -662,7 +662,7 @@ ol.steps li strong{color:var(--ivory)}
           <div class="ncol-a"><div class="natcell-l">Col A</div><div class="natcell-v nat-A" id="nat-A">—</div><div class="natcell-n">Reported floor</div></div>
           <div class="ncol-b"><div class="natcell-l">Col B</div><div class="natcell-v nat-B" id="nat-B">—</div><div class="natcell-n">OIG 2025 primary</div></div>
           <div class="ncol-c"><div class="natcell-l">Col C</div><div class="natcell-v nat-C" id="nat-C">—</div><div class="natcell-n">OIG 2012 high</div></div>
-          <div class="ncol-d"><div class="natcell-l">Col D</div><div class="natcell-v nat-D" id="nat-D">—</div><div class="natcell-n">OIG 2025–2012 × M_suppress</div></div>
+          <div class="ncol-d"><div class="natcell-l">Col D</div><div class="natcell-v nat-D" id="nat-D">—</div><div class="natcell-n">Col B floor · Col C × M_suppress</div></div>
         </div>
       </div>
     </div>
@@ -691,7 +691,7 @@ ol.steps li strong{color:var(--ivory)}
           Col A · Reported:&nbsp;&nbsp;&nbsp;&nbsp; V × D × PPD × B_mort × 0.07<br>
           Col B · OIG 2025:&nbsp;&nbsp;&nbsp; V × D × PPD × (B_mort ÷ 0.35) × 0.07<br>
           Col C · OIG 2012:&nbsp;&nbsp;&nbsp; V × D × PPD × (B_mort ÷ 0.14) × 0.07<br>
-          Col D · Suppression: low = Col B × M_suppress · high = Col C × M_suppress [THEORETICAL]<br>
+          Col D · Suppression: low = Col B × 1.0 (no-suppress floor) · high = Col C × M_suppress [THEORETICAL]<br>
           <span style="color:var(--mut-2)">OR_excess = OR_mort − 1 = 1.07 − 1 = 0.07. OIG fix is denominator correction; OR is causal mechanism — separate variables, separate columns.</span>
         </div>
         <ol class="steps">
@@ -700,7 +700,7 @@ ol.steps li strong{color:var(--ivory)}
           <li><strong>Baseline 30-day mortality (B_mort)</strong>. National default 2.9% from CMS Hospital Compare [BENCHMARK — VERIFY current year]. Option 3 dual-output: Column A–D each computed twice, once with B_mort_nat and once with B_mort_fac. Delta = B_mort_fac − B_mort_nat.</li>
           <li><strong>OR_excess = 0.07</strong>. Aiken 2002 (JAMA; OR 1.07, 95% CI 1.03–1.12; N=10,184 nurses; 232 hospitals). Replicated Aiken 2014 (Lancet; OR 1.07; N=422,730 patients; 9 countries). OR_excess = OR_mort − 1 = the 7% excess mortality above baseline per additional patient per nurse. [VERIFIED]</li>
           <li><strong>OIG capture-rate correction</strong> — Cols B and C only. OIG (2025) confirmed 35% capture rate [VERIFIED]. OIG (2012) confirmed 14% historical floor [VERIFIED]. Applied to B_mort: B_mort ÷ captureRate. Not to OR_excess — these are independent constructs.</li>
-          <li><strong>M_suppress (Col D only)</strong>. Governance suppression coefficient by ownership tier. NP/Public/Academic 1.0× [BENCHMARK]. For-profit chain 2.5× · PE-owned 4.3× [THEORETICAL — CMDS Stages 5–6; directional support Kannan 2023]. Col D displayed as a low (÷0.35 × M) to high (÷0.14 × M) band. Must be labeled [THEORETICAL] in all outputs.</li>
+          <li><strong>M_suppress (Col D only)</strong>. Governance suppression coefficient by ownership tier. NP/Public/Academic 1.0× [BENCHMARK]. For-profit chain 2.5× · PE-owned 4.3× [THEORETICAL — CMDS Stages 5–6; directional support Kannan 2023]. Col D low = Col B × 1.0 (no-suppression floor, M always 1.0); Col D high = Col C × M_suppress. When M=1.0 (NP/Public/AMC), Col D = Col B–Col C range. Must be labeled [THEORETICAL] in all outputs.</li>
           <li><strong>Output measure</strong>: attributable deaths (not dollars). Per-vacancy, annual facility, and national scale.</li>
         </ol>
         <div class="crit-block" style="margin-top:18px">
@@ -818,7 +818,7 @@ ol.steps li strong{color:var(--ivory)}
 
     <div class="disclaimer">
       <div class="disclaimer-l">Evidence Disclosure · MAM v1.0</div>
-      <p>Four-tier architecture per MAM Source of Truth Specification v1.0, June 2026. <b>Mortality OR:</b> Aiken 2002 JAMA / Aiken 2014 Lancet [VERIFIED] OR 1.07 (95% CI 1.03–1.12). <b>OR_excess = 0.07</b> (= OR_mort − 1). <b>Capture rates:</b> OIG 2025 (35%) / OIG 2012 (14%) [VERIFIED]. <b>B_mort_nat ~2.9%</b> requires verification against current CMS Hospital Compare before production deployment [BENCHMARK — VERIFY]. <b>Col D applies M_suppress</b> as a [THEORETICAL] governance band — low = ÷0.35 × M, high = ÷0.14 × M. Must be labeled [THEORETICAL] in all outputs.</p>
+      <p>Four-tier architecture per MAM Source of Truth Specification v1.0, June 2026. <b>Mortality OR:</b> Aiken 2002 JAMA / Aiken 2014 Lancet [VERIFIED] OR 1.07 (95% CI 1.03–1.12). <b>OR_excess = 0.07</b> (= OR_mort − 1). <b>Capture rates:</b> OIG 2025 (35%) / OIG 2012 (14%) [VERIFIED]. <b>B_mort_nat ~2.9%</b> requires verification against current CMS Hospital Compare before production deployment [BENCHMARK — VERIFY]. <b>Col D applies M_suppress</b> as a [THEORETICAL] governance band — low = Col B × 1.0 (no-suppression floor), high = Col C × M_suppress. NP/Public/AMC (M=1.0): Col D = Col B–Col C. Must be labeled [THEORETICAL] in all outputs.</p>
       <p>The MAM does not identify specific patients, determine individual causation, or constitute a finding of negligence. For litigation, regulatory, or government recoupment use, counsel review required. PHC Calculator companion at jkt78.github.io/PHC-Calculator. Not legal or medical advice.</p>
       <p>© 2026 Jennifer Torrez, BSN, RN / PRISMqd. CC-BY 4.0. Cite as: Torrez J. (2026). Mortality Attribution Module v1.0. PRISMqd Research Division.</p>
     </div>
@@ -850,7 +850,7 @@ const TIER_NOTE = {
   A:'<b>Reported baseline.</b> Applies B_mort directly without OIG correction. Represents what current reported data implies about mortality. Floor estimate — most conservative. [DERIVED]',
   B:'<b>OIG 2025 adjusted [DERIVED].</b> B_mort ÷ 0.35 (confirmed 35% capture rate, OEI-06-18-00401, July 2025). Primary conservative policy estimate.',
   C:'<b>OIG 2012 high-side [DERIVED].</b> B_mort ÷ 0.14 (historical 14% capture floor, OEI-06-09-00091). Upper-bound OIG-adjusted estimate.',
-  D:'<b>Full architecture [THEORETICAL].</b> Col B × M_suppress (low) to Col C × M_suppress (high) by selected ownership tier. Must be labeled [THEORETICAL] in all outputs. Do not cite in legal contexts without expert review.'
+  D:'<b>Full architecture [THEORETICAL].</b> Low = Col B × 1.0 (no-suppression floor) · High = Col C × M_suppress by selected ownership tier. NP/Public/AMC (M=1.0): Col D = Col B–Col C range. Must be labeled [THEORETICAL] in all outputs. Do not cite in legal contexts without expert review.'
 };
 
 let currentCol = 'B';
@@ -916,8 +916,8 @@ function compute(){
   const pvA = vacDeaths(b_nat, null);
   const pvB = vacDeaths(b_nat, CAPTURE_B);
   const pvC = vacDeaths(b_nat, CAPTURE_C);
-  // Col D: banded
-  const pvD_lo = pvB * M;
+  // Col D: floor = no-suppression (M=1 always), ceiling = OIG-2012 × M_suppress
+  const pvD_lo = pvB;
   const pvD_hi = pvC * M;
 
   // Annual
@@ -931,7 +931,7 @@ function compute(){
   // Facility-specific (Output 2)
   const fac = b_fac !== null ? {
     pvA: vacDeaths(b_fac, null), pvB: vacDeaths(b_fac, CAPTURE_B), pvC: vacDeaths(b_fac, CAPTURE_C),
-    pvD_lo: vacDeaths(b_fac, CAPTURE_B)*M, pvD_hi: vacDeaths(b_fac, CAPTURE_C)*M,
+    pvD_lo: vacDeaths(b_fac, CAPTURE_B), pvD_hi: vacDeaths(b_fac, CAPTURE_C)*M,
     b_fac, b_delta
   } : null;
 
