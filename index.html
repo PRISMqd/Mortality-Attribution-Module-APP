@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mortality Attribution Module | PRISMqd</title>
+<meta name="description" content="Facility-level attributable preventable mortality estimation from registered nurse vacancy periods. Companion instrument to the PHC Calculator.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,600;0,6..96,700;0,6..96,900;1,6..96,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Palette derived from the berry-on-seafoam image */
+  --crimson:#8B1717; --crimson-mid:#AE2222; --crimson-light:#D44040;
+  --mint:#C6DED9; --teal:#7BB8BE; --slate:#4A7585;
+  --bg:#0C1920; --surface:#112230; --surface-2:#172C3A;
+  --ivory:#F0EBE2; --warm:#E8E0D0;
+  --line:rgba(123,184,190,0.15); --line-soft:rgba(240,235,226,0.07);
+  --mut:rgba(240,235,226,0.44); --mut-2:rgba(240,235,226,0.66);
+  --stable:#4DBBAA; --critical:#AE2222;
+  /* column accents */
+  --cA:#7BB8BE; --cB:#5BA4B0; --cC:#C8A060; --cD:#8B1717;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--ivory);
+  font-family:'Plus Jakarta Sans',sans-serif;
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;min-height:100vh;
+}
+.mono{font-family:'Space Mono',monospace}
+.serif{font-family:'Bodoni Moda',serif}
+
+/* ── HEADER ── */
+.site-header{
+  background:rgba(12,25,32,0.90);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);padding:0 30px;height:62px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+}
+.logo{font-family:'Bodoni Moda',serif;font-size:22px;font-weight:700;
+  color:var(--mint);letter-spacing:.06em;text-decoration:none;font-variant:small-caps}
+.logo span{color:var(--crimson-light)}
+.header-badge{font-family:'Space Mono',monospace;font-size:10.5px;
+  color:var(--teal);border:1px solid var(--line);padding:5px 12px;
+  border-radius:20px;letter-spacing:.09em;text-transform:uppercase}
+
+/* ── HERO ── */
+.hero{max-width:1320px;margin:0 auto;padding:58px 30px 32px}
+.hero-eyebrow{font-family:'Space Mono',monospace;font-size:11px;
+  letter-spacing:.18em;text-transform:uppercase;color:var(--crimson-light);margin-bottom:16px}
+.hero h1{font-family:'Bodoni Moda',serif;font-size:clamp(36px,5vw,62px);
+  font-weight:900;line-height:1.08;max-width:800px;margin-bottom:18px;
+  letter-spacing:-.01em}
+.hero h1 em{font-style:italic;color:var(--mint)}
+.hero-sub{color:var(--mut-2);font-size:17px;max-width:660px;
+  font-weight:300;margin-bottom:24px;line-height:1.7}
+.hero-meta{display:flex;gap:24px;flex-wrap:wrap}
+.hero-meta-item{font-family:'Space Mono',monospace;font-size:11px;
+  color:var(--mut);letter-spacing:.02em}
+.hero-meta-item strong{color:var(--teal);font-weight:400}
+.hero-companion{display:inline-flex;align-items:center;gap:8px;margin-top:16px;
+  font-family:'Space Mono',monospace;font-size:10.5px;color:var(--mut);
+  border:1px solid var(--line);border-radius:6px;padding:6px 13px;letter-spacing:.04em}
+.hero-companion span{color:var(--mint)}
+
+/* ── LAYOUT ── */
+.main{max-width:1320px;margin:0 auto;padding:0 30px 90px;
+  display:grid;grid-template-columns:minmax(0,380px) minmax(0,1fr);gap:28px;align-items:start}
+
+/* ── INPUT PANEL ── */
+.panel{position:sticky;top:76px;max-height:calc(100vh - 94px);
+  overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;
+  scrollbar-color:rgba(123,184,190,.35) transparent;padding-right:2px}
+.panel::-webkit-scrollbar{width:4px}
+.panel::-webkit-scrollbar-thumb{background:rgba(123,184,190,.35);border-radius:2px}
+.card{background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;padding:22px;margin-bottom:14px}
+.card-title{font-family:'Space Mono',monospace;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--teal);
+  margin-bottom:18px;padding-bottom:11px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:7px}
+.card-title .ct-aside{font-size:9.5px;color:var(--mut);margin-left:auto;letter-spacing:.04em}
+.fg{margin-bottom:16px}
+.fg:last-child{margin-bottom:0}
+label{display:block;font-size:13px;font-weight:500;color:var(--mut-2);margin-bottom:6px}
+label .def{font-family:'Space Mono',monospace;font-size:10px;color:var(--teal);opacity:.7;margin-left:5px}
+label .evtag{font-family:'Space Mono',monospace;font-size:9px;
+  padding:1px 5px;border-radius:3px;border:1px solid;margin-left:4px;vertical-align:middle}
+label .tag-verify{color:#C8A060;border-color:rgba(200,160,96,.35);background:rgba(200,160,96,.06)}
+label .tag-bench{color:var(--teal);border-color:var(--line);background:rgba(123,184,190,.05)}
+input[type=number],input[type=text],select{
+  width:100%;background:var(--bg);border:1px solid var(--line);
+  border-radius:9px;color:var(--ivory);font-family:'Space Mono',monospace;
+  font-size:14px;padding:11px 14px;outline:none;
+  transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none}
+input[type=number]:focus,input[type=text]:focus,select:focus{
+  border-color:var(--teal);box-shadow:0 0 0 3px rgba(123,184,190,.1)}
+input.fac-input{border-color:rgba(200,160,96,.35)}
+input.fac-input:focus{border-color:#C8A060;box-shadow:0 0 0 3px rgba(200,160,96,.1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237BB8BE' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 14px center;cursor:pointer}
+select option{background:var(--bg)}
+.range-wrap{display:flex;align-items:center;gap:12px;margin-top:8px}
+input[type=range]{flex:1;-webkit-appearance:none;appearance:none;height:3px;
+  border-radius:3px;background:linear-gradient(90deg,var(--teal) 0%,var(--teal) var(--p,40%),rgba(240,235,226,.12) var(--p,40%));outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+  border-radius:50%;background:var(--ivory);border:3px solid var(--teal);cursor:pointer}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;
+  border-radius:50%;background:var(--ivory);border:3px solid var(--teal);cursor:pointer}
+.radio-group{display:flex;flex-direction:column;gap:7px}
+.radio-opt{display:flex;align-items:flex-start;gap:10px;padding:11px 13px;
+  border:1px solid var(--line);border-radius:9px;cursor:pointer;
+  transition:border-color .18s,background .18s}
+.radio-opt:hover{border-color:rgba(123,184,190,.4)}
+.radio-opt.sel{border-color:var(--teal);background:rgba(123,184,190,.06)}
+.radio-opt input{display:none}
+.dot{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--teal);
+  flex-shrink:0;margin-top:2px;display:flex;align-items:center;justify-content:center}
+.radio-opt.sel .dot::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal)}
+.r-text{font-size:13px;font-weight:600;color:var(--ivory)}
+.r-sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--mut);margin-top:2px}
+.const-row{display:flex;justify-content:space-between;align-items:center;
+  padding:8px 0;border-bottom:1px solid var(--line-soft);font-size:12.5px}
+.const-row:last-child{border-bottom:none}
+.const-row .k{color:var(--mut)}
+.const-row .v{font-family:'Space Mono',monospace;color:var(--ivory);font-size:12px}
+.const-row .v.accent{color:var(--teal)}
+
+/* ── RESULTS ── */
+.results{min-width:0}
+.alert{background:rgba(139,23,23,.07);border:1px solid rgba(139,23,23,.25);
+  border-left:3px solid var(--crimson);border-radius:0 10px 10px 0;
+  padding:13px 18px;margin-bottom:22px;font-size:12.5px;color:var(--mut-2);line-height:1.6}
+.alert strong{color:var(--crimson-light)}
+
+/* COLUMN RAIL */
+.rail-label{font-family:'Space Mono',monospace;font-size:10px;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+.rail{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:9px}
+.seg{position:relative;background:var(--surface);border:1px solid var(--line);
+  border-radius:11px;padding:13px 11px;cursor:pointer;text-align:left;
+  transition:border-color .18s,background .18s,transform .12s;overflow:hidden}
+.seg:hover{transform:translateY(-2px)}
+.seg .seg-tag{font-family:'Space Mono',monospace;font-size:9.5px;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.seg .seg-name{font-size:12px;font-weight:600;line-height:1.3;color:var(--mut-2)}
+.seg .seg-bar{position:absolute;left:0;bottom:0;height:3px;width:100%;
+  background:var(--col,var(--teal));opacity:.2;transition:opacity .18s}
+.seg.active{background:var(--surface-2);border-color:var(--col)}
+.seg.active .seg-name{color:var(--ivory)}
+.seg.active .seg-tag{color:var(--col)}
+.seg.active .seg-bar{opacity:1;height:4px}
+.rail-note{font-size:12px;color:var(--mut);margin-bottom:24px;line-height:1.55}
+.rail-note b{color:var(--mut-2);font-weight:500}
+
+/* HERO MAG */
+.mag{background:radial-gradient(130% 160% at 0% 0%,rgba(139,23,23,.13),rgba(17,34,48,0) 58%),var(--surface);
+  border:1px solid var(--line);border-radius:18px;padding:30px 34px;margin-bottom:18px}
+.mag-top{display:flex;justify-content:space-between;align-items:flex-start;
+  gap:16px;flex-wrap:wrap;margin-bottom:8px}
+.mag-eyebrow{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--col,var(--teal));margin-bottom:4px}
+.mag-context{font-size:12px;color:var(--mut)}
+.mag-pill{font-family:'Space Mono',monospace;font-size:10.5px;border:1px solid var(--line);
+  border-radius:20px;padding:5px 13px;color:var(--mut-2);white-space:nowrap}
+.mag-pill b{color:var(--col,var(--teal))}
+.mag-value{font-family:'Bodoni Moda',serif;font-weight:900;
+  font-size:clamp(56px,10vw,112px);line-height:.94;letter-spacing:-.02em;
+  color:var(--ivory);margin:8px 0 4px;font-variant-numeric:tabular-nums}
+.mag-value.range{font-size:clamp(32px,5.8vw,62px);line-height:1.06}
+.mag-unit{font-family:'Space Mono',monospace;font-size:12px;
+  color:var(--mut);margin-bottom:22px;letter-spacing:.04em}
+.mag-unit b{font-family:'Bodoni Moda',serif;font-size:20px;
+  color:var(--col,var(--crimson-light));font-style:italic;letter-spacing:0}
+.mag-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;
+  border-top:1px solid var(--line-soft);padding-top:18px}
+.mstat-l{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.mstat-v{font-family:'Bodoni Moda',serif;font-size:26px;font-weight:700;
+  color:var(--ivory);font-variant-numeric:tabular-nums}
+
+/* DUAL OUTPUT */
+.dual{background:var(--surface);border:1px solid rgba(200,160,96,.2);
+  border-radius:16px;padding:22px 26px;margin-bottom:18px}
+.dual-head{display:flex;justify-content:space-between;align-items:baseline;
+  flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.dual-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:#C8A060}
+.dual-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.dual-cell{background:rgba(12,25,32,.5);border:1px solid var(--line-soft);
+  border-radius:9px;padding:14px 16px}
+.dual-cell.active-cell{border-color:rgba(200,160,96,.35);background:rgba(200,160,96,.04)}
+.dual-cell-l{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--mut);margin-bottom:5px}
+.dual-cell-v{font-family:'Bodoni Moda',serif;font-size:24px;font-weight:700;
+  color:var(--ivory);font-variant-numeric:tabular-nums;line-height:1.1}
+.dual-cell-v.pos{color:#D44040}
+.dual-cell-v.neg{color:var(--stable)}
+.dual-cell-n{font-size:10.5px;color:var(--mut);margin-top:4px}
+.dual-hidden{opacity:.35;pointer-events:none}
+.dual-hint{font-size:11.5px;color:var(--mut);margin-top:12px;
+  border-top:1px solid var(--line-soft);padding-top:11px;line-height:1.5}
+.dual-hint b{color:var(--mut-2)}
+
+/* HIDDEN MORTALITY */
+.ice{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+  padding:24px 26px;margin-bottom:18px}
+.ice-head{display:flex;justify-content:space-between;align-items:baseline;
+  flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.ice-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--teal)}
+.ice-sub{font-size:12px;color:var(--mut)}
+.ice-bar{display:flex;height:72px;border-radius:11px;overflow:hidden;
+  background:var(--bg);border:1px solid var(--line-soft)}
+.ice-seg{display:flex;flex-direction:column;justify-content:center;
+  padding:0 16px;transition:flex-basis .65s cubic-bezier(.22,1,.36,1),
+  flex-grow .65s cubic-bezier(.22,1,.36,1),opacity .4s;overflow:hidden;white-space:nowrap;min-width:0}
+.ice-reported{background:linear-gradient(135deg,rgba(77,187,170,.28),rgba(77,187,170,.10));
+  border-right:1px solid rgba(12,25,32,.5)}
+.ice-hidden{background:linear-gradient(135deg,rgba(174,34,34,.40),rgba(139,23,23,.16))}
+.ice-seg-l{font-family:'Space Mono',monospace;font-size:9.5px;letter-spacing:.08em;
+  text-transform:uppercase;opacity:.85;margin-bottom:3px}
+.ice-reported .ice-seg-l{color:#8FE9C4}
+.ice-hidden .ice-seg-l{color:#FF9AAA}
+.ice-seg-v{font-family:'Bodoni Moda',serif;font-size:22px;font-weight:700;
+  color:var(--ivory);font-variant-numeric:tabular-nums;line-height:1}
+.ice-caption{font-size:12.5px;color:var(--mut-2);line-height:1.65;
+  margin-top:14px;border-top:1px solid var(--line-soft);padding-top:13px}
+.ice-caption b{color:var(--ivory);font-weight:600}
+.ice-caption .hid{color:var(--critical)}
+
+/* CHART */
+.chart-card{background:var(--surface);border:1px solid var(--line);
+  border-radius:16px;padding:22px 24px;margin-bottom:18px}
+.chart-head{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.chart-desc{font-size:12px;color:var(--mut);margin-bottom:16px}
+.chart-container{position:relative;height:260px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;
+  padding-top:12px;border-top:1px solid var(--line-soft)}
+.leg{font-family:'Space Mono',monospace;font-size:10.5px;color:var(--mut);
+  display:flex;align-items:center;gap:6px;cursor:pointer;transition:color .15s}
+.leg:hover{color:var(--mut-2)}
+.leg.on{color:var(--ivory)}
+.sw{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* COMPARISON TABLE */
+.ctable{background:var(--surface);border:1px solid var(--line);
+  border-radius:16px;overflow:hidden;margin-bottom:18px}
+.ctable-h{padding:15px 22px;background:var(--surface-2);border-bottom:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--teal)}
+.ct-grid{display:grid;grid-template-columns:2fr repeat(4,1fr)}
+.ct-grid>div{padding:11px 13px;font-size:12.5px;border-bottom:1px solid var(--line-soft);min-width:0}
+.ct-grid>div:not(:nth-child(5n+1)){border-left:1px solid var(--line-soft)}
+.ct-head>div{font-family:'Space Mono',monospace;font-size:10px;
+  letter-spacing:.06em;text-transform:uppercase;color:var(--mut);
+  background:rgba(255,255,255,.015)}
+.ct-head .colh-A{color:var(--cA)} .ct-head .colh-B{color:var(--cB)}
+.ct-head .colh-C{color:var(--cC)} .ct-head .colh-D{color:var(--cD)}
+.ct-row .ct-key{color:var(--mut-2)}
+.ct-val{font-family:'Space Mono',monospace;color:var(--mut-2);font-variant-numeric:tabular-nums;font-size:12px}
+.ct-total>div{padding-top:14px;padding-bottom:14px;font-family:'Bodoni Moda',serif;
+  font-size:15px;font-weight:700;background:rgba(123,184,190,.03);border-bottom:none}
+.ct-total .ct-key{color:var(--ivory)}
+.ct-col-active{background:rgba(255,255,255,.04)!important;box-shadow:inset 0 0 0 1px var(--line)}
+
+/* GRID SECTIONS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+.sec{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+.sec.full{margin-bottom:18px}
+.sec-title{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.sec-sub{font-size:11px;color:var(--mut);margin-bottom:16px;line-height:1.55}
+.drow{display:flex;justify-content:space-between;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:13px}
+.drow:last-child{border-bottom:none}
+.drow .k{color:var(--mut-2)}
+.drow .v{font-family:'Space Mono',monospace;color:var(--ivory);font-variant-numeric:tabular-nums;font-size:12.5px}
+.drow .v.accent{color:var(--crimson-light)}
+.natgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.natcell-l{font-family:'Space Mono',monospace;font-size:9.5px;color:var(--mut);margin-bottom:5px}
+.natcell-v{font-family:'Bodoni Moda',serif;font-size:19px;font-weight:700;
+  line-height:1.1;color:var(--ivory);font-variant-numeric:tabular-nums;word-break:break-word}
+.natcell-n{font-size:9.5px;color:rgba(240,235,226,.28);margin-top:3px}
+.nat-A{color:var(--cA)} .nat-B{color:var(--cB)} .nat-C{color:var(--cC)} .nat-D{color:var(--cD)}
+
+/* TABS */
+.tabbar{display:flex;gap:2px;border-bottom:1px solid var(--line);margin:32px 0 22px;overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tab{padding:11px 19px;font-family:'Space Mono',monospace;font-size:11px;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--mut);background:none;
+  border:none;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:color .18s}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal)}
+.tab:hover:not(.active){color:var(--mut-2)}
+.tabpanel{display:none}
+.tabpanel.active{display:block}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse}
+.tbl-card{background:var(--surface);border:1px solid var(--line);
+  border-radius:14px;overflow:hidden;margin-bottom:18px}
+.tbl-card-h{padding:14px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);
+  font-family:'Space Mono',monospace;font-size:11px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--teal)}
+th{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--mut);padding:10px 16px;text-align:left;
+  border-bottom:1px solid var(--line);background:var(--surface-2)}
+td{padding:11px 16px;font-size:12.5px;border-bottom:1px solid var(--line-soft);
+  color:var(--mut-2);vertical-align:top;line-height:1.55}
+tr:last-child td{border-bottom:none}
+td .ev-name{color:var(--ivory);font-weight:600;font-size:13px}
+td .ev-sub{font-size:10.5px;color:var(--mut);display:block;margin-top:2px}
+td.num{font-family:'Space Mono',monospace;font-size:12px;
+  color:var(--ivory);font-variant-numeric:tabular-nums;white-space:nowrap}
+td.deaths{font-family:'Space Mono',monospace;font-size:12px;
+  color:var(--crimson-light);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* EVIDENCE TAGS */
+.tag{display:inline-block;font-family:'Space Mono',monospace;font-size:9px;
+  letter-spacing:.04em;padding:2px 7px;border-radius:4px;border:1px solid;vertical-align:middle}
+.tag-v{color:var(--stable);border-color:rgba(77,187,170,.4);background:rgba(77,187,170,.07)}
+.tag-b{color:var(--teal);border-color:var(--line);background:rgba(123,184,190,.05)}
+.tag-d{color:#C8A060;border-color:rgba(200,160,96,.35);background:rgba(200,160,96,.06)}
+.tag-t{color:var(--crimson-light);border-color:rgba(139,23,23,.4);background:rgba(139,23,23,.07)}
+.tag-vf{color:#E89060;border-color:rgba(232,144,96,.35);background:rgba(232,144,96,.05)}
+
+/* METHODOLOGY */
+.method-formula{font-family:'Space Mono',monospace;font-size:12.5px;color:#C8A060;
+  background:rgba(200,160,96,.05);border:1px solid rgba(200,160,96,.18);
+  border-radius:9px;padding:16px 18px;margin-bottom:18px;line-height:2.0}
+.method-formula .v{color:var(--teal)}
+ol.steps{list-style:none;counter-reset:s}
+ol.steps li{counter-increment:s;padding:10px 0 10px 32px;position:relative;
+  font-size:13px;color:var(--mut-2);border-bottom:1px solid var(--line-soft);line-height:1.65}
+ol.steps li:last-child{border-bottom:none}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:12px;
+  font-family:'Space Mono',monospace;font-size:10px;color:var(--teal);
+  background:rgba(123,184,190,.1);width:20px;height:20px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center}
+ol.steps li strong{color:var(--ivory)}
+
+/* SENSITIVITY */
+.sens-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.sens-cell{background:var(--surface);border:1px solid var(--line);
+  border-radius:12px;padding:18px 20px;text-align:center}
+.sens-cell.primary-cell{border-color:var(--teal);background:rgba(123,184,190,.04)}
+.sens-label{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.sens-or{font-family:'Bodoni Moda',serif;font-size:36px;font-weight:900;
+  color:var(--ivory);line-height:1}
+.sens-or-sub{font-family:'Space Mono',monospace;font-size:10px;color:var(--mut);
+  margin:4px 0 10px}
+.sens-v{font-family:'Space Mono',monospace;font-size:12.5px;color:var(--mut-2);margin-top:6px}
+.sens-v b{color:var(--crimson-light)}
+
+/* ACTIONS / FOOTER */
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:10px 20px;
+  border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;
+  font-weight:600;cursor:pointer;border:1px solid var(--line);
+  background:transparent;color:var(--ivory);transition:all .18s;letter-spacing:.01em}
+.btn:hover{border-color:var(--teal)}
+.btn-primary{background:linear-gradient(135deg,var(--crimson),var(--crimson-mid));
+  border-color:transparent;color:var(--ivory)}
+.btn-primary:hover{opacity:.9}
+.disclaimer{background:rgba(17,34,48,.7);border:1px solid var(--line);
+  border-left:3px solid var(--crimson);border-radius:0 9px 9px 0;padding:16px 20px}
+.disclaimer-l{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--crimson-light);margin-bottom:8px}
+.disclaimer p{font-size:11.5px;color:var(--mut);line-height:1.7}
+.disclaimer p+p{margin-top:8px}
+.disclaimer b{color:var(--mut-2)}
+.site-footer{border-top:1px solid var(--line);padding:22px 30px;text-align:center;
+  font-family:'Space Mono',monospace;font-size:10.5px;color:rgba(240,235,226,.3);
+  letter-spacing:.03em;max-width:1320px;margin:0 auto}
+.site-footer a{color:var(--teal);text-decoration:none}
+
+/* CRITICAL NOTE BLOCK */
+.crit-block{background:rgba(139,23,23,.06);border:1px solid rgba(139,23,23,.2);
+  border-radius:10px;padding:14px 18px;margin-bottom:18px;
+  font-size:12.5px;color:var(--mut-2);line-height:1.65}
+.crit-block .crit-label{font-family:'Space Mono',monospace;font-size:9.5px;
+  letter-spacing:.12em;text-transform:uppercase;color:var(--crimson-light);
+  margin-bottom:6px}
+.crit-block b{color:var(--ivory)}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+  .main{grid-template-columns:1fr}
+  .panel{position:static;max-height:none}
+  .grid2{grid-template-columns:1fr}
+  .natgrid{grid-template-columns:repeat(2,1fr)}
+  .dual-grid{grid-template-columns:1fr 1fr}
+  .sens-grid{grid-template-columns:1fr}
+}
+@media(max-width:640px){
+  .hero{padding:36px 18px 22px}
+  .main{padding:0 18px 60px}
+  .rail{grid-template-columns:repeat(2,1fr)}
+  .mag-stats{grid-template-columns:1fr 1fr}
+  .ctable{overflow-x:auto}
+  .ct-grid{grid-template-columns:1.4fr repeat(4,minmax(60px,1fr));font-size:11px;min-width:480px}
+  .dual-grid{grid-template-columns:1fr}
+}
+@media print{
+  .site-header,.panel,.actions,.tabbar,.rail{position:static}
+  body{background:#fff;color:#000}
+  .main{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="#">PRISM<span>qd</span></a>
+  <span class="header-badge">MAM v1.0 · June 2026</span>
+</header>
+
+<div class="hero">
+  <div class="hero-eyebrow">Mortality Attribution Module · Companion to the PHC Calculator</div>
+  <h1>How many patients <em>died</em>?</h1>
+  <p class="hero-sub">A facility-level statistical instrument estimating preventable inpatient deaths attributable to registered nurse vacancy-period understaffing — across four evidence tiers, from what institutions report to what the data actually implies.</p>
+  <div class="hero-meta">
+    <span class="hero-meta-item">Author <strong>Jennifer Torrez, BSN, RN · PRISMqd</strong></span>
+    <span class="hero-meta-item">Foundation <strong>Aiken 2002 · Aiken 2014 · OIG 2025/2012 · NSI 2026</strong></span>
+    <span class="hero-meta-item">Version <strong>MAM SOT Specification v1.0, June 2026</strong></span>
+  </div>
+  <div class="hero-companion">PHC asks: <em>what did it cost?</em>&nbsp;&nbsp;→&nbsp;&nbsp;MAM asks: <span>how many died?</span></div>
+</div>
+
+<div class="main">
+
+  <!-- ─── INPUT PANEL ─── -->
+  <aside class="panel">
+
+    <div class="card">
+      <div class="card-title">Facility Inputs</div>
+      <div class="fg">
+        <label>Total RN FTE <span class="def">default 600</span></label>
+        <input type="number" id="fte" value="600" min="10" max="20000" step="10">
+        <div class="range-wrap"><input type="range" id="fte-r" min="50" max="4000" step="10" value="600"></div>
+      </div>
+      <div class="fg">
+        <label>Annual Turnover Rate (%) <span class="def">NSI 17.6</span></label>
+        <input type="number" id="turnover" value="17.6" min="1" max="60" step="0.1">
+        <div class="range-wrap"><input type="range" id="turnover-r" min="1" max="40" step="0.1" value="17.6"></div>
+      </div>
+      <div class="fg">
+        <label>Avg Vacancy Duration (days) <span class="def">NSI 78</span></label>
+        <input type="number" id="vacancy_days" value="78" min="1" max="365" step="1">
+        <div class="range-wrap"><input type="range" id="vacancy_days-r" min="14" max="200" step="1" value="78"></div>
+      </div>
+      <div class="fg">
+        <label>Patients Absorbed / Vacancy / Day <span class="def">default 0.5</span></label>
+        <input type="number" id="ppd" value="0.5" min="0.1" max="5" step="0.1">
+        <div class="range-wrap"><input type="range" id="ppd-r" min="0.1" max="3" step="0.1" value="0.5"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Baseline Mortality Rate <span class="ct-aside">Option 3 Dual-Output</span></div>
+      <div class="fg">
+        <label>National 30-Day Inpatient Mortality (%)
+          <span class="evtag tag-verify">BENCHMARK·VERIFY</span>
+        </label>
+        <input type="number" id="b_mort_nat" value="2.9" min="0.1" max="30" step="0.1">
+        <div class="range-wrap"><input type="range" id="b_mort_nat-r" min="0.5" max="15" step="0.1" value="2.9"></div>
+      </div>
+      <div class="fg">
+        <label>Facility-Specific CMS 30-Day Rate (%)
+          <span class="evtag tag-bench">BENCHMARK</span>
+        </label>
+        <input type="number" id="b_mort_fac" placeholder="Enter from CMS Hospital Compare" min="0.1" max="60" step="0.1" class="fac-input">
+        <div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5">
+          Optional. From your CMS Hospital Compare facility page. Enables Output 2 + delta comparison.
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Ownership Type <span class="ct-aside">Col D only</span></div>
+      <div class="radio-group" id="ownership-group">
+        <label class="radio-opt" data-own="pe"><input type="radio" name="ownership" value="pe"><div class="dot"></div><div><div class="r-text">For-Profit / Private Equity</div><div class="r-sub">M_suppress 4.3× · [THEORETICAL]</div></div></label>
+        <label class="radio-opt" data-own="fp"><input type="radio" name="ownership" value="fp"><div class="dot"></div><div><div class="r-text">For-Profit / Non-PE Chain</div><div class="r-sub">M_suppress 2.5× · [THEORETICAL]</div></div></label>
+        <label class="radio-opt sel" data-own="np"><input type="radio" name="ownership" value="np" checked><div class="dot"></div><div><div class="r-text">Nonprofit / Non-academic</div><div class="r-sub">M_suppress 1.0× · [BENCHMARK]</div></div></label>
+        <label class="radio-opt" data-own="amc"><input type="radio" name="ownership" value="amc"><div class="dot"></div><div><div class="r-text">Nonprofit / Academic Med Ctr</div><div class="r-sub">M_suppress 1.0× · [BENCHMARK]</div></div></label>
+        <label class="radio-opt" data-own="pub"><input type="radio" name="ownership" value="pub"><div class="dot"></div><div><div class="r-text">Safety Net / Public / CAH</div><div class="r-sub">M_suppress 1.0× · [BENCHMARK]</div></div></label>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Locked Constants</div>
+      <div class="const-row"><span class="k">Mortality OR (Aiken 2002/2014)</span><span class="v accent">1.07</span></div>
+      <div class="const-row"><span class="k">OR_excess (= 1.07 − 1)</span><span class="v accent">0.07</span></div>
+      <div class="const-row"><span class="k">OIG 2025 capture rate</span><span class="v">35%</span></div>
+      <div class="const-row"><span class="k">OIG 2012 capture rate</span><span class="v">14%</span></div>
+      <div class="const-row"><span class="k">Vacancy duration default</span><span class="v">78 days</span></div>
+      <div class="const-row"><span class="k">PPD default</span><span class="v">0.5</span></div>
+      <div class="const-row"><span class="k">National RN departures</span><span class="v">534,047</span></div>
+      <div style="font-size:10px;color:var(--mut);margin-top:10px;line-height:1.55">
+        Per MAM SOT Specification v1.0. Outcome: 30-day inpatient mortality. No cost variables — outputs are deaths.
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ─── RESULTS ─── -->
+  <main class="results">
+
+    <div class="alert">
+      <strong>Population-level statistical attribution — not individual causation.</strong>
+      Outputs estimate excess deaths attributable to nurse-to-patient ratio deviation during vacancy periods, using the peer-reviewed Aiken dose-response relationship.
+      The MAM does not identify specific patients, determine individual causation, or constitute a finding of negligence. Column D applies a [THEORETICAL] suppression multiplier.
+    </div>
+
+    <!-- COLUMN RAIL -->
+    <div class="rail-label">Select an evidence tier — each adds exactly one analytical layer</div>
+    <div class="rail" id="rail">
+      <button class="seg" data-col="A" style="--col:var(--cA)"><div class="seg-tag">Col A</div><div class="seg-name">Reported Baseline</div><div class="seg-bar"></div></button>
+      <button class="seg active" data-col="B" style="--col:var(--cB)"><div class="seg-tag">Col B</div><div class="seg-name">OIG 2025 Adjusted</div><div class="seg-bar"></div></button>
+      <button class="seg" data-col="C" style="--col:var(--cC)"><div class="seg-tag">Col C</div><div class="seg-name">OIG 2012 High-Side</div><div class="seg-bar"></div></button>
+      <button class="seg" data-col="D" style="--col:var(--cD)"><div class="seg-tag">Col D</div><div class="seg-name">+ Suppression</div><div class="seg-bar"></div></button>
+    </div>
+    <div class="rail-note" id="rail-note"></div>
+
+    <!-- HERO MAGNITUDE -->
+    <div class="mag" id="mag" style="--col:var(--cB)">
+      <div class="mag-top">
+        <div>
+          <div class="mag-eyebrow" id="mag-eyebrow">Col B · OIG 2025 — Annual attributable deaths</div>
+          <div class="mag-context" id="mag-context">—</div>
+        </div>
+        <div class="mag-pill">vs. Col A baseline · <b id="mag-pill-mult">—</b></div>
+      </div>
+      <div class="mag-value" id="mag-value">—</div>
+      <div class="mag-unit" id="mag-unit">attributable deaths per year</div>
+      <div class="mag-stats">
+        <div><div class="mstat-l">Deaths / Vacancy</div><div class="mstat-v" id="mag-pervac">—</div></div>
+        <div><div class="mstat-l">National Estimate</div><div class="mstat-v" id="mag-nat">—</div></div>
+        <div><div class="mstat-l">Annual Departures (V)</div><div class="mstat-v" id="mag-dep">—</div></div>
+      </div>
+    </div>
+
+    <!-- DUAL OUTPUT -->
+    <div class="dual">
+      <div class="dual-head">
+        <div class="dual-title">Option 3 Dual-Output · National vs Facility Baseline</div>
+        <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--mut)">Annual deaths · selected tier</div>
+      </div>
+      <div class="dual-grid">
+        <div class="dual-cell active-cell">
+          <div class="dual-cell-l">Output 1 · National baseline <span class="tag tag-vf" style="margin-left:4px">VERIFY</span></div>
+          <div class="dual-cell-v" id="dual-nat">—</div>
+          <div class="dual-cell-n">B_mort_nat <span id="dual-nat-rate">2.9%</span> · CMS Hospital Compare</div>
+        </div>
+        <div class="dual-cell" id="dual-fac-cell">
+          <div class="dual-cell-l">Output 2 · Facility CMS rate <span class="tag tag-bench" style="margin-left:4px">BENCHMARK</span></div>
+          <div class="dual-cell-v" id="dual-fac">—</div>
+          <div class="dual-cell-n">B_mort_fac <span id="dual-fac-rate">—</span> · enter above to activate</div>
+        </div>
+        <div class="dual-cell" id="dual-delta-cell">
+          <div class="dual-cell-l">Output 3 · Facility deviation (Δ)</div>
+          <div class="dual-cell-v" id="dual-delta">—</div>
+          <div class="dual-cell-n" id="dual-delta-note">B_mort_fac − B_mort_nat · positive = above national avg</div>
+        </div>
+      </div>
+      <div class="dual-hint" id="dual-hint">Enter a facility-specific CMS 30-day mortality rate above to activate Outputs 2 and 3. A <b>positive delta</b> means your facility's 30-day mortality exceeds the national average — compounding exposure when paired with a positive M_suppress tier.</div>
+    </div>
+
+    <!-- HIDDEN MORTALITY ICEBERG -->
+    <div class="ice">
+      <div class="ice-head">
+        <div class="ice-title">Captured vs Hidden Mortality</div>
+        <div class="ice-sub">Col A (reported floor) vs selected tier — deaths not captured in institutional reporting</div>
+      </div>
+      <div class="ice-bar">
+        <div class="ice-seg ice-reported" id="ice-rep" style="flex:0 0 30%">
+          <div class="ice-seg-l">Captured (Col A floor)</div>
+          <div class="ice-seg-v" id="ice-rep-v">—</div>
+        </div>
+        <div class="ice-seg ice-hidden" id="ice-hid" style="flex:1 1 70%">
+          <div class="ice-seg-l">Hidden / uncaptured</div>
+          <div class="ice-seg-v" id="ice-hid-v">—</div>
+        </div>
+      </div>
+      <div class="ice-caption" id="ice-caption">—</div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-card">
+      <div class="chart-head">Four-Tier Comparison · Annual Attributable Deaths</div>
+      <div class="chart-desc">OIG correction expands the observation window; suppression tier scales by ownership governance. Active column highlighted.</div>
+      <div class="chart-container"><canvas id="chart"></canvas></div>
+      <div class="legend" id="legend">
+        <span class="leg" data-col="A"><span class="sw" style="background:var(--cA)"></span>Col A · Reported</span>
+        <span class="leg on" data-col="B"><span class="sw" style="background:var(--cB)"></span>Col B · OIG 2025</span>
+        <span class="leg" data-col="C"><span class="sw" style="background:var(--cC)"></span>Col C · OIG 2012</span>
+        <span class="leg" data-col="D"><span class="sw" style="background:var(--cD)"></span>Col D · Suppression</span>
+      </div>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="ctable">
+      <div class="ctable-h">Attributable Deaths by Tier · Annual Facility Estimate</div>
+      <div class="ct-grid ct-head">
+        <div>Metric</div>
+        <div class="colh-A" data-colcell="A">Col A</div>
+        <div class="colh-B" data-colcell="B">Col B</div>
+        <div class="colh-C" data-colcell="C">Col C</div>
+        <div class="colh-D" data-colcell="D">Col D</div>
+      </div>
+      <div class="ct-grid ct-row">
+        <div class="ct-key">Deaths / Vacancy</div>
+        <div class="ct-val" data-colcell="A" id="r-vac-A">—</div>
+        <div class="ct-val" data-colcell="B" id="r-vac-B">—</div>
+        <div class="ct-val" data-colcell="C" id="r-vac-C">—</div>
+        <div class="ct-val" data-colcell="D" id="r-vac-D">—</div>
+      </div>
+      <div class="ct-grid ct-row">
+        <div class="ct-key">Annual Facility Deaths</div>
+        <div class="ct-val" data-colcell="A" id="r-ann-A">—</div>
+        <div class="ct-val" data-colcell="B" id="r-ann-B">—</div>
+        <div class="ct-val" data-colcell="C" id="r-ann-C">—</div>
+        <div class="ct-val" data-colcell="D" id="r-ann-D">—</div>
+      </div>
+      <div class="ct-grid ct-row ct-total">
+        <div class="ct-key">National (534,047 dep.)</div>
+        <div class="ct-val" data-colcell="A" id="r-nat-A">—</div>
+        <div class="ct-val" data-colcell="B" id="r-nat-B">—</div>
+        <div class="ct-val" data-colcell="C" id="r-nat-C">—</div>
+        <div class="ct-val" data-colcell="D" id="r-nat-D">—</div>
+      </div>
+    </div>
+
+    <!-- DETAIL + NATIONAL -->
+    <div class="grid2">
+      <div class="sec">
+        <div class="sec-title">Calculation Detail</div>
+        <div class="sec-sub">Active tier: <span id="detail-tier" style="color:var(--mut-2)">—</span></div>
+        <div class="drow"><span class="k">Annual Departures (V)</span><span class="v" id="d-V">—</span></div>
+        <div class="drow"><span class="k">Vacancy Patient-Days (V×D×PPD)</span><span class="v accent" id="d-pd">—</span></div>
+        <div class="drow"><span class="k">Baseline Mortality (B_mort)</span><span class="v" id="d-bm">—</span></div>
+        <div class="drow"><span class="k">OIG Correction Applied</span><span class="v" id="d-oig">—</span></div>
+        <div class="drow"><span class="k">OR_excess (= 0.07)</span><span class="v">0.07</span></div>
+        <div class="drow"><span class="k">M_suppress (Col D only)</span><span class="v" id="d-M">—</span></div>
+        <div class="drow"><span class="k">Deaths / Vacancy (output)</span><span class="v" id="d-pervac">—</span></div>
+      </div>
+      <div class="sec">
+        <div class="sec-title">National Scale</div>
+        <div class="sec-sub">534,047 annual RN departures (HRSA 2028 × 17.6%). Col B is primary policy figure.</div>
+        <div class="natgrid">
+          <div><div class="natcell-l">Col A</div><div class="natcell-v nat-A" id="nat-A">—</div><div class="natcell-n">Reported floor</div></div>
+          <div><div class="natcell-l">Col B</div><div class="natcell-v nat-B" id="nat-B">—</div><div class="natcell-n">OIG 2025 primary</div></div>
+          <div><div class="natcell-l">Col C</div><div class="natcell-v nat-C" id="nat-C">—</div><div class="natcell-n">OIG 2012 high</div></div>
+          <div><div class="natcell-l">Col D</div><div class="natcell-v nat-D" id="nat-D">—</div><div class="natcell-n">+ Suppression</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="window.print()">⎙ Print / Save PDF</button>
+      <button class="btn" id="copy-btn" onclick="copyResults()">⧉ Copy Summary</button>
+      <button class="btn" onclick="resetDefaults()">↺ Reset Defaults</button>
+    </div>
+
+    <!-- ─── TABS ─── -->
+    <div class="tabbar" id="tabbar">
+      <button class="tab active" data-tab="methodology">Methodology</button>
+      <button class="tab" data-tab="sensitivity">Sensitivity · CI Range</button>
+      <button class="tab" data-tab="suppression">Suppression Table</button>
+      <button class="tab" data-tab="sources">Sources</button>
+    </div>
+
+    <!-- METHODOLOGY -->
+    <div class="tabpanel active" id="panel-methodology">
+      <div class="sec full">
+        <div class="sec-title">Master Formula</div>
+        <div style="height:14px"></div>
+        <div class="method-formula">
+          MAM = <span class="v">V</span> × D × PPD × B_mort × OR_excess [÷ captureRate] [× M_suppress]<br><br>
+          Col A · Reported:&nbsp;&nbsp;&nbsp;&nbsp; V × D × PPD × B_mort × 0.07<br>
+          Col B · OIG 2025:&nbsp;&nbsp;&nbsp; V × D × PPD × (B_mort ÷ 0.35) × 0.07<br>
+          Col C · OIG 2012:&nbsp;&nbsp;&nbsp; V × D × PPD × (B_mort ÷ 0.14) × 0.07<br>
+          Col D · Suppression: low = Col B × M_suppress · high = Col C × M_suppress [THEORETICAL]<br>
+          <span style="color:var(--mut-2)">OR_excess = OR_mort − 1 = 1.07 − 1 = 0.07. OIG fix is denominator correction; OR is causal mechanism — separate variables, separate columns.</span>
+        </div>
+        <ol class="steps">
+          <li><strong>Annual Departures (V)</strong> = RN FTE × (turnover ÷ 100). NSI 2026 national average: 17.6%.</li>
+          <li><strong>Vacancy Patient-Days</strong> = V × D × PPD. 78-day vacancy, 0.5 patients absorbed per vacancy per day.</li>
+          <li><strong>Baseline 30-day mortality (B_mort)</strong>. National default 2.9% from CMS Hospital Compare [BENCHMARK — VERIFY current year]. Option 3 dual-output: Column A–D each computed twice, once with B_mort_nat and once with B_mort_fac. Delta = B_mort_fac − B_mort_nat.</li>
+          <li><strong>OR_excess = 0.07</strong>. Aiken 2002 (JAMA; OR 1.07, 95% CI 1.03–1.12; N=10,184 nurses; 232 hospitals). Replicated Aiken 2014 (Lancet; OR 1.07; N=422,730 patients; 9 countries). OR_excess = OR_mort − 1 = the 7% excess mortality above baseline per additional patient per nurse. [VERIFIED]</li>
+          <li><strong>OIG capture-rate correction</strong> — Cols B and C only. OIG (2025) confirmed 35% capture rate [VERIFIED]. OIG (2012) confirmed 14% historical floor [VERIFIED]. Applied to B_mort: B_mort ÷ captureRate. Not to OR_excess — these are independent constructs.</li>
+          <li><strong>M_suppress (Col D only)</strong>. Governance suppression coefficient by ownership tier. NP/Public/Academic 1.0× [BENCHMARK]. For-profit chain 2.5× · PE-owned 4.3× [THEORETICAL — CMDS Stages 5–6; directional support Kannan 2023]. Col D displayed as a low (÷0.35 × M) to high (÷0.14 × M) band. Must be labeled [THEORETICAL] in all outputs.</li>
+          <li><strong>Output measure</strong>: attributable deaths (not dollars). Per-vacancy, annual facility, and national scale.</li>
+        </ol>
+        <div class="crit-block" style="margin-top:18px">
+          <div class="crit-label">Methodological Framing · Mandatory Disclosure</div>
+          <b>The MAM produces population-level statistical attribution estimates.</b> It does not identify specific patients, determine individual causation, or constitute a finding of negligence or liability. Population-level attributable risk estimation is the standard methodology used in environmental epidemiology, tobacco litigation, pharmaceutical adverse event reporting, and public health burden-of-disease calculations. Consistent with Bradford Hill criteria. Before use in litigation support or regulatory enforcement, counsel review is required.
+        </div>
+      </div>
+      <div class="tbl-card">
+        <div class="tbl-card-h">Primary Evidence Anchors</div>
+        <table>
+          <thead><tr><th>Study</th><th>Design</th><th>Finding</th><th>MAM Application</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ev-name">Aiken 2002</span><span class="ev-sub">JAMA 288:1987 · doi:10.1001/jama.288.16.1987</span></td><td>Cross-sectional; N=10,184 nurses; 232 hospitals; Pennsylvania</td><td class="num">OR 1.07 per pt/nurse<br>(95% CI 1.03–1.12)</td><td>PRIMARY anchor. OR_mort = 1.07; OR_excess = 0.07. 30-day surgical mortality outcome.</td></tr>
+            <tr><td><span class="ev-name">Aiken 2014</span><span class="ev-sub">Lancet 383:1824 · doi:10.1016/S0140-6736(13)62631-8</span></td><td>Retrospective; N=422,730 patients; 300 hospitals; 9 EU countries</td><td class="num">OR 1.07 per pt/nurse<br>(95% CI 1.03–1.12)</td><td>Independent replication at identical point estimate. High-confidence signal.</td></tr>
+            <tr><td><span class="ev-name">OIG 2025 · OEI-06-18-00401</span><span class="ev-sub">July 2025</span></td><td>Random sample; Medicare records review</td><td class="num">35% capture rate</td><td>captureRate_B. Col B low-side denominator (÷0.35).</td></tr>
+            <tr><td><span class="ev-name">OIG 2012 · OEI-06-09-00091</span><span class="ev-sub">January 2012</span></td><td>Medicare record review; independent methodology</td><td class="num">14% capture rate</td><td>captureRate_C. Col C high-side denominator (÷0.14).</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SENSITIVITY -->
+    <div class="tabpanel" id="panel-sensitivity">
+      <div class="sec full">
+        <div class="sec-title">Confidence Interval Sensitivity Range</div>
+        <div class="sec-sub">Aiken OR 1.07 carries 95% CI 1.03–1.12. Primary outputs use the point estimate. This tab shows the full CI range applied to Col B (OIG 2025) per vacancy, at national baseline B_mort. [VERIFIED — CI bounds]</div>
+      </div>
+      <div class="sens-grid">
+        <div class="sens-cell">
+          <div class="sens-label">Lower Bound · OR 1.03</div>
+          <div class="sens-or">1.03</div>
+          <div class="sens-or-sub">OR_excess = 0.03</div>
+          <div class="sens-v">Col B / vacancy: <b id="sens-b-lo">—</b></div>
+          <div class="sens-v">Annual (<span class="sen-v-an" id="sens-dep">—</span> dep.): <b id="sens-ann-lo">—</b></div>
+          <div class="sens-v">National (534,047): <b id="sens-nat-lo">—</b></div>
+        </div>
+        <div class="sens-cell primary-cell">
+          <div class="sens-label">Primary · OR 1.07 <span class="tag tag-v" style="font-size:8px;margin-left:4px">VERIFIED</span></div>
+          <div class="sens-or" style="color:var(--teal)">1.07</div>
+          <div class="sens-or-sub">OR_excess = 0.07 · point estimate</div>
+          <div class="sens-v">Col B / vacancy: <b id="sens-b-mid">—</b></div>
+          <div class="sens-v">Annual (<span id="sens-dep-mid">—</span> dep.): <b id="sens-ann-mid">—</b></div>
+          <div class="sens-v">National (534,047): <b id="sens-nat-mid">—</b></div>
+        </div>
+        <div class="sens-cell">
+          <div class="sens-label">Upper Bound · OR 1.12</div>
+          <div class="sens-or">1.12</div>
+          <div class="sens-or-sub">OR_excess = 0.12</div>
+          <div class="sens-v">Col B / vacancy: <b id="sens-b-hi">—</b></div>
+          <div class="sens-v">Annual (<span id="sens-dep-hi">—</span> dep.): <b id="sens-ann-hi">—</b></div>
+          <div class="sens-v">National (534,047): <b id="sens-nat-hi">—</b></div>
+        </div>
+      </div>
+      <div class="crit-block">
+        <div class="crit-label">Research Gap · Vacancy-Period Hazard Accumulation</div>
+        Griffiths 2019 (BMJ Qual Saf; PMC6716358) established aHR 1.03 per day below ward mean staffing [VERIFIED]. Compounded across 78 days: 1.03^78 = <span id="griff-factor">10.0</span>×. This compound application to a continuous multi-week vacancy is an author extrapolation, <b>not a Griffiths finding</b>, and is <b>excluded from all MAM outputs</b>. The MAM uses Aiken OR 1.07 as a conservative single-shift constant. No published study has measured how 30-day mortality risk accumulates across a continuous multi-week RN vacancy period. The upper bound of vacancy-period mortality is empirically unknown.
+      </div>
+      <div class="tbl-card">
+        <div class="tbl-card-h">Full Sensitivity Table · Col B (OIG 2025) at National Baseline · Annual Facility</div>
+        <table>
+          <thead><tr><th>OR Bound</th><th>OR_excess</th><th>Deaths / Vacancy</th><th>Annual (facility V)</th><th>National (534,047)</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td><span class="ev-name">Lower · OR 1.03</span></td><td class="num">0.03</td><td class="deaths" id="st-vac-lo">—</td><td class="deaths" id="st-ann-lo">—</td><td class="deaths" id="st-nat-lo">—</td><td><span class="tag tag-v">VERIFIED · CI lower</span></td></tr>
+            <tr style="background:rgba(123,184,190,.03)"><td><span class="ev-name">Primary · OR 1.07</span><span class="ev-sub">Point estimate — all primary MAM outputs</span></td><td class="num">0.07</td><td class="deaths" id="st-vac-mid">—</td><td class="deaths" id="st-ann-mid">—</td><td class="deaths" id="st-nat-mid">—</td><td><span class="tag tag-v">VERIFIED · primary</span></td></tr>
+            <tr><td><span class="ev-name">Upper · OR 1.12</span></td><td class="num">0.12</td><td class="deaths" id="st-vac-hi">—</td><td class="deaths" id="st-ann-hi">—</td><td class="deaths" id="st-nat-hi">—</td><td><span class="tag tag-v">VERIFIED · CI upper</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SUPPRESSION TABLE -->
+    <div class="tabpanel" id="panel-suppression">
+      <div class="tbl-card">
+        <div class="tbl-card-h">M_suppress by Ownership Type · Column D only</div>
+        <table>
+          <thead><tr><th>Ownership Type</th><th>Est. Reporting Rate</th><th>M_suppress</th><th>Status</th></tr></thead>
+          <tbody id="supp-body">
+            <tr data-own="pe"><td><span class="ev-name">Private equity owned</span><span class="ev-sub">Contractual NDA; cost extraction governance</span></td><td class="num">10–14%</td><td class="num">4.3×</td><td><span class="tag tag-t">THEORETICAL</span></td></tr>
+            <tr data-own="fp"><td><span class="ev-name">For-profit corporate chain</span><span class="ev-sub">Margin pressure; risk-management protocols</span></td><td class="num">14–18%</td><td class="num">2.5×</td><td><span class="tag tag-t">THEORETICAL</span></td></tr>
+            <tr data-own="np"><td><span class="ev-name">Nonprofit, non-academic</span><span class="ev-sub">Reputational protection; TJC risk mgmt</span></td><td class="num">16–20%</td><td class="num">1.0×</td><td><span class="tag tag-b">BENCHMARK</span></td></tr>
+            <tr data-own="amc"><td><span class="ev-name">Nonprofit academic / public</span><span class="ev-sub">Research mission; stronger institutional oversight</span></td><td class="num">20–28%</td><td class="num">1.0×</td><td><span class="tag tag-b">BENCHMARK</span></td></tr>
+            <tr data-own="pub"><td><span class="ev-name">Safety net / public / CAH</span><span class="ev-sub">Regulatory scrutiny; union presence</span></td><td class="num">20–28%</td><td class="num">1.0×</td><td><span class="tag tag-b">BENCHMARK</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11.5px;color:var(--mut);line-height:1.65;padding:0 4px">
+        M_suppress values are model-constructed coefficients derived from the Clinical Moral Disengagement Scaffolding (CMDS) framework (Torrez 2026; doi:10.5281/zenodo.18985075), anchored to OIG OEI-06-09-00091.
+        Directionally supported by Kannan 2023 (PMC10751598: +25.4% HAC, +27.3% falls, +37.7% CLABSI post-PE acquisition vs matched controls).
+        Kannan 2023 is <span class="tag tag-v">VERIFIED</span>; M_suppress values are <span class="tag tag-t">THEORETICAL</span> — not independently validated as vacancy-period mortality multipliers.
+        Column D outputs must be labeled [THEORETICAL] in all formal presentations and must not be cited in legal or regulatory submissions without expert review and appropriate disclosure.
+      </div>
+    </div>
+
+    <!-- SOURCES -->
+    <div class="tabpanel" id="panel-sources">
+      <div class="tbl-card">
+        <div class="tbl-card-h">Primary Sources · Evidence Disclosure</div>
+        <table>
+          <tbody>
+            <tr><td><span class="ev-name">Aiken LH et al. JAMA. 2002;288(16):1987-1993.</span><span class="ev-sub">doi:10.1001/jama.288.16.1987 · OR_mort 1.07 (95% CI 1.03–1.12) · PRIMARY anchor</span></td><td><span class="tag tag-v">VERIFIED</span></td></tr>
+            <tr><td><span class="ev-name">Aiken LH et al. Lancet. 2014;383(9931):1824-1830.</span><span class="ev-sub">doi:10.1016/S0140-6736(13)62631-8 · OR 1.07 replicated; 422,730 patients; 9 EU countries</span></td><td><span class="tag tag-v">VERIFIED</span></td></tr>
+            <tr><td><span class="ev-name">OIG OEI-06-18-00401. Hospitals Did Not Capture Half of Patient Harm Events. July 2025.</span><span class="ev-sub">captureRate_B = 0.35 · Col B denominator</span></td><td><span class="tag tag-v">VERIFIED</span></td></tr>
+            <tr><td><span class="ev-name">OIG OEI-06-09-00091. Hospital Incident Reporting Systems Do Not Capture Most Patient Harm. January 2012.</span><span class="ev-sub">captureRate_C = 0.14 · Col C denominator</span></td><td><span class="tag tag-v">VERIFIED</span></td></tr>
+            <tr><td><span class="ev-name">NSI Nursing Solutions. 2026 National Health Care Retention and RN Staffing Report.</span><span class="ev-sub">vacancyDuration 78 days · turnoverRate 17.6% · 527 hospitals; 40 states</span></td><td><span class="tag tag-b">BENCHMARK</span><span class="ev-sub">COI: for-profit staffing vendor; not peer-reviewed</span></td></tr>
+            <tr><td><span class="ev-name">HRSA. Nurse Workforce Projections, 2023–2038. December 2025.</span><span class="ev-sub">2028 projected 3,034,360 RN FTE → 534,047 annual departures (× 17.6%)</span></td><td><span class="tag tag-b">BENCHMARK</span></td></tr>
+            <tr><td><span class="ev-name">CMS Hospital Compare. 30-Day Mortality Rates. CMS.gov.</span><span class="ev-sub">B_mort_nat source · all-condition 30-day average · current year figure requires verification before production deployment</span></td><td><span class="tag tag-vf">BENCHMARK · VERIFY</span></td></tr>
+            <tr><td><span class="ev-name">Kannan S et al. JAMA Health Forum. 2023;4(1):e221578. PMC10751598.</span><span class="ev-sub">+25.4% HAC; +27.3% falls; +37.7% CLABSI post-PE acquisition — directional support for M_suppress PE tier</span></td><td><span class="tag tag-v">VERIFIED</span><span class="ev-sub">Not a direct measurement of M_suppress</span></td></tr>
+            <tr><td><span class="ev-name">Griffiths P et al. BMJ Qual Saf. 2019;28(8):609-617. PMC6716358.</span><span class="ev-sub">aHR 1.03/day below ward mean staffing · referenced for research gap only · NOT used in primary MAM output</span></td><td><span class="tag tag-v">VERIFIED</span><span class="ev-sub">Compound application (1.03^78) is author extrapolation — excluded from MAM</span></td></tr>
+            <tr><td><span class="ev-name">BLS Occupational Employment Statistics. May 2024.</span><span class="ev-sub">3,391,000 employed RNs nationally</span></td><td><span class="tag tag-v">VERIFIED</span></td></tr>
+            <tr><td><span class="ev-name">Torrez J. Clinical Moral Disengagement Scaffolding (CMDS). Zenodo. 2026. doi:10.5281/zenodo.18985075.</span><span class="ev-sub">M_suppress value architecture · Column D only</span></td><td><span class="tag tag-t">THEORETICAL</span><span class="ev-sub">Author self-published preprint; not independently validated</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <div class="disclaimer-l">Evidence Disclosure · MAM v1.0</div>
+      <p>Four-tier architecture per MAM Source of Truth Specification v1.0, June 2026. <b>Mortality OR:</b> Aiken 2002 JAMA / Aiken 2014 Lancet [VERIFIED] OR 1.07 (95% CI 1.03–1.12). <b>OR_excess = 0.07</b> (= OR_mort − 1). <b>Capture rates:</b> OIG 2025 (35%) / OIG 2012 (14%) [VERIFIED]. <b>B_mort_nat ~2.9%</b> requires verification against current CMS Hospital Compare before production deployment [BENCHMARK — VERIFY]. <b>Col D applies M_suppress</b> as a [THEORETICAL] governance band — low = ÷0.35 × M, high = ÷0.14 × M. Must be labeled [THEORETICAL] in all outputs.</p>
+      <p>The MAM does not identify specific patients, determine individual causation, or constitute a finding of negligence. For litigation, regulatory, or government recoupment use, counsel review required. PHC Calculator companion at jkt78.github.io/PHC-Calculator. Not legal or medical advice.</p>
+      <p>© 2026 Jennifer Torrez, BSN, RN / PRISMqd. CC-BY 4.0. Cite as: Torrez J. (2026). Mortality Attribution Module v1.0. PRISMqd Research Division.</p>
+    </div>
+
+  </main>
+</div>
+
+<footer class="site-footer">PRISMqd Research Division · Mortality Attribution Module v1.0 · June 2026 · <a href="https://jkt78.github.io/PHC-Calculator">PHC Calculator Companion</a> · MAM SOT Specification v1.0</footer>
+
+<script>
+// ── Locked constants (MAM SOT v1.0) ──
+const OR_MORT        = 1.07;
+const OR_EXCESS      = 0.07;   // OR_mort - 1
+const CAPTURE_B      = 0.35;   // OIG 2025
+const CAPTURE_C      = 0.14;   // OIG 2012
+const B_MORT_NAT_DEF = 0.029;  // CMS Hospital Compare ~2.9% [BENCHMARK — VERIFY]
+const NATIONAL_DEP   = 534047;
+const M_SUPPRESS     = { pe:4.3, fp:2.5, np:1.0, amc:1.0, pub:1.0 };
+const COLHEX         = { A:'#7BB8BE', B:'#5BA4B0', C:'#C8A060', D:'#8B1717' };
+const COLVAR         = { A:'var(--cA)', B:'var(--cB)', C:'var(--cC)', D:'var(--cD)' };
+const TIER_NAME      = { A:'Reported Baseline', B:'OIG 2025 Adjusted', C:'OIG 2012 High-Side', D:'Full Architecture (Suppression)' };
+const TIER_EYEBROW   = {
+  A:'Col A · Reported — deaths implied by institutional reporting',
+  B:'Col B · OIG 2025 — conservative OIG-adjusted estimate',
+  C:'Col C · OIG 2012 — high-side capture-floor estimate',
+  D:'Col D · Full Architecture — suppression tier applied [THEORETICAL]'
+};
+const TIER_NOTE = {
+  A:'<b>Reported baseline.</b> Applies B_mort directly without OIG correction. Represents what current reported data implies about mortality. Floor estimate — most conservative. [DERIVED]',
+  B:'<b>OIG 2025 adjusted [DERIVED].</b> B_mort ÷ 0.35 (confirmed 35% capture rate, OEI-06-18-00401, July 2025). Primary conservative policy estimate.',
+  C:'<b>OIG 2012 high-side [DERIVED].</b> B_mort ÷ 0.14 (historical 14% capture floor, OEI-06-09-00091). Upper-bound OIG-adjusted estimate.',
+  D:'<b>Full architecture [THEORETICAL].</b> Col B × M_suppress (low) to Col C × M_suppress (high) by selected ownership tier. Must be labeled [THEORETICAL] in all outputs. Do not cite in legal contexts without expert review.'
+};
+
+let currentCol = 'B';
+
+// ── Formatting ──
+function fmtD(n, mode){
+  // mode: 'vac' (per vacancy, 3dp), 'ann' (annual, 1dp), 'nat' (national, integer)
+  if(typeof n !== 'number' || isNaN(n)) return '—';
+  if(mode==='vac') return n.toFixed(3);
+  if(mode==='ann') return n.toFixed(1);
+  if(mode==='nat') return Math.round(n).toLocaleString('en-US');
+  return n.toFixed(2);
+}
+function fmtRange(a, b, mode){ return fmtD(a, mode) + ' – ' + fmtD(b, mode); }
+function fmtPct(n){ return (n*100).toFixed(2)+'%'; }
+
+// ── Animation ──
+const animState = {};
+function animate(id, target, formatter){
+  const el = document.getElementById(id); if(!el) return;
+  const start = animState[id];
+  animState[id] = target;
+  if(start===undefined || start===target || typeof target!=='number'){ el.textContent=formatter(target); return; }
+  const dur=650, t0=performance.now();
+  (function step(now){
+    const p=Math.min((now-t0)/dur,1), e=1-Math.pow(1-p,3);
+    el.textContent=formatter(start+(target-start)*e);
+    if(p<1) requestAnimationFrame(step);
+  })(performance.now());
+}
+function setEl(id, txt){ const el=document.getElementById(id); if(el) el.textContent=txt; }
+function setBand(id, lo, hi, mode){
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent = fmtRange(lo, hi, mode);
+}
+
+// ── Core compute ──
+function val(id){ return (document.getElementById(id)||{}).value; }
+
+function compute(){
+  const fte      = parseFloat(val('fte'))           || 600;
+  const turnover = parseFloat(val('turnover'))      || 17.6;
+  const D        = parseFloat(val('vacancy_days'))  || 78;
+  const PPD      = parseFloat(val('ppd'))           || 0.5;
+  const bNatPct  = parseFloat(val('b_mort_nat'))    || 2.9;
+  const bFacPct  = parseFloat(val('b_mort_fac'));
+  const own      = (document.querySelector('input[name=ownership]:checked')||{}).value || 'np';
+  const M        = M_SUPPRESS[own] || 1.0;
+
+  const b_nat  = bNatPct / 100;
+  const b_fac  = (bFacPct > 0 && !isNaN(bFacPct)) ? bFacPct / 100 : null;
+  const b_delta = b_fac !== null ? b_fac - b_nat : null;
+
+  const V      = fte * turnover / 100;
+  const patDays = V * D * PPD;
+
+  // Per-vacancy calculations using b_nat (primary)
+  function vacDeaths(b, captureRate){
+    const bEff = captureRate ? b / captureRate : b;
+    return D * PPD * bEff * OR_EXCESS;
+  }
+
+  const pvA = vacDeaths(b_nat, null);
+  const pvB = vacDeaths(b_nat, CAPTURE_B);
+  const pvC = vacDeaths(b_nat, CAPTURE_C);
+  // Col D: banded
+  const pvD_lo = pvB * M;
+  const pvD_hi = pvC * M;
+
+  // Annual
+  const annA = V * pvA, annB = V * pvB, annC = V * pvC;
+  const annD_lo = V * pvD_lo, annD_hi = V * pvD_hi;
+
+  // National
+  const natA = NATIONAL_DEP * pvA, natB = NATIONAL_DEP * pvB, natC = NATIONAL_DEP * pvC;
+  const natD_lo = NATIONAL_DEP * pvD_lo, natD_hi = NATIONAL_DEP * pvD_hi;
+
+  // Facility-specific (Output 2)
+  const fac = b_fac !== null ? {
+    pvA: vacDeaths(b_fac, null), pvB: vacDeaths(b_fac, CAPTURE_B), pvC: vacDeaths(b_fac, CAPTURE_C),
+    pvD_lo: vacDeaths(b_fac, CAPTURE_B)*M, pvD_hi: vacDeaths(b_fac, CAPTURE_C)*M,
+    b_fac, b_delta
+  } : null;
+
+  return { fte, turnover, D, PPD, b_nat, b_fac, b_delta, own, M, V, patDays,
+           pvA, pvB, pvC, pvD_lo, pvD_hi,
+           annA, annB, annC, annD_lo, annD_hi,
+           natA, natB, natC, natD_lo, natD_hi, fac };
+}
+
+// ── Render ──
+function render(){
+  const r = compute();
+  const c = currentCol;
+  const isBand = (c === 'D');
+
+  document.getElementById('mag').style.setProperty('--col', COLVAR[c]);
+
+  // Hero
+  setEl('mag-eyebrow', TIER_EYEBROW[c]);
+  setEl('mag-context', Math.round(r.V).toLocaleString()+' departures · '+r.D+'d vacancy · '+r.PPD+' pts/vac/day'+(c==='D'?' · '+r.own.toUpperCase()+' M='+r.M+'×':''));
+
+  const magEl = document.getElementById('mag-value');
+  magEl.classList.toggle('range', isBand);
+
+  if(isBand){
+    animState['mag-value']=undefined;
+    magEl.textContent = fmtRange(r.annD_lo, r.annD_hi, 'ann');
+  } else {
+    const annVals = { A:r.annA, B:r.annB, C:r.annC };
+    animate('mag-value', annVals[c], v=>fmtD(v,'ann'));
+  }
+
+  const colMult = { A:r.annA, B:r.annB, C:r.annC, D:r.annD_hi };
+  const mult = r.annA > 0 ? colMult[c] / r.annA : 1;
+  setEl('mag-pill-mult', mult.toFixed(1)+'×');
+
+  // Per vacancy stat
+  const pvVals = { A:r.pvA, B:r.pvB, C:r.pvC };
+  if(isBand) setEl('mag-pervac', fmtRange(r.pvD_lo, r.pvD_hi, 'vac'));
+  else setEl('mag-pervac', fmtD(pvVals[c], 'vac'));
+
+  // National stat
+  const natVals = { A:r.natA, B:r.natB, C:r.natC };
+  if(isBand) setEl('mag-nat', fmtRange(r.natD_lo, r.natD_hi, 'nat'));
+  else setEl('mag-nat', fmtD(natVals[c], 'nat'));
+
+  animate('mag-dep', r.V, v=>Math.round(v).toLocaleString());
+
+  // Dual output
+  setEl('dual-nat-rate', (r.b_nat*100).toFixed(1)+'%');
+  const dualAnnVals = { A:r.annA, B:r.annB, C:r.annC };
+  const dualAnnD_str = fmtRange(r.annD_lo, r.annD_hi, 'ann');
+  setEl('dual-nat', isBand ? dualAnnD_str : fmtD(dualAnnVals[c], 'ann'));
+
+  const facCell = document.getElementById('dual-fac-cell');
+  const deltaCell = document.getElementById('dual-delta-cell');
+  const dualHint = document.getElementById('dual-hint');
+
+  if(r.fac){
+    facCell.classList.remove('dual-hidden');
+    deltaCell.classList.remove('dual-hidden');
+    dualHint.style.display='none';
+    setEl('dual-fac-rate', (r.fac.b_fac*100).toFixed(2)+'%');
+    const facAnnVals = { A:r.fac.pvA*r.V, B:r.fac.pvB*r.V, C:r.fac.pvC*r.V };
+    const facD_str = fmtRange(r.fac.pvD_lo*r.V, r.fac.pvD_hi*r.V, 'ann');
+    setEl('dual-fac', isBand ? facD_str : fmtD(facAnnVals[c], 'ann'));
+    const dDeltaEl = document.getElementById('dual-delta');
+    const dPct = (r.fac.b_delta*100).toFixed(2);
+    dDeltaEl.textContent = (r.fac.b_delta>0?'+':'')+dPct+'%';
+    dDeltaEl.className = 'dual-cell-v ' + (r.fac.b_delta>0?'pos':(r.fac.b_delta<0?'neg':''));
+    setEl('dual-delta-note', r.fac.b_delta>0
+      ? 'Above national average. Compounding exposure with higher M_suppress tiers.'
+      : r.fac.b_delta<0 ? 'Below national average. Lower baseline mortality than CMS national mean.'
+      : 'Equal to national average (Δ = 0).');
+  } else {
+    facCell.classList.add('dual-hidden');
+    deltaCell.classList.add('dual-hidden');
+    dualHint.style.display='';
+    setEl('dual-fac-rate','—');
+  }
+
+  // Hidden mortality iceberg (annual)
+  const annFloor = r.annA;
+  const annSel = isBand ? r.annD_hi : { A:r.annA, B:r.annB, C:r.annC }[c];
+  const hidden = Math.max(0, annSel - annFloor);
+  const total = annFloor + hidden;
+  const repPct = total>0 ? Math.max(annFloor/total*100, c==='A'?100:6) : 100;
+  document.getElementById('ice-rep').style.flex = '0 0 '+repPct+'%';
+  document.getElementById('ice-hid').style.flex = '1 1 '+(100-repPct)+'%';
+  document.getElementById('ice-hid').style.opacity = hidden>0?1:0.18;
+  setEl('ice-rep-v', fmtD(annFloor,'ann'));
+  setEl('ice-hid-v', fmtD(hidden,'ann'));
+  document.getElementById('ice-caption').innerHTML = c==='A'
+    ? 'At the reported baseline there is no uncaptured delta — Col A <b>is</b> the institutional floor. Select a higher tier to reveal hidden mortality.'
+    : '<b>'+TIER_NAME[c]+'</b>: <b>'+fmtD(annFloor,'ann')+'</b> deaths are in the reported floor (Col A); <span class="hid">'+fmtD(hidden,'ann')+' deaths — '+Math.round(hidden/total*100)+'%</span> are not captured in institutional reporting.';
+
+  // Comparison table
+  [
+    ['A', r.pvA, r.annA, r.natA, false],
+    ['B', r.pvB, r.annB, r.natB, false],
+    ['C', r.pvC, r.annC, r.natC, false],
+    ['D', r.pvD_lo, r.annD_lo, r.natD_lo, true]
+  ].forEach(([k, pvLo, annLo, natLo, band]) => {
+    const pvHi  = { D:r.pvD_hi  }[k] || pvLo;
+    const annHi = { D:r.annD_hi }[k] || annLo;
+    const natHi = { D:r.natD_hi }[k] || natLo;
+    setEl('r-vac-'+k, band ? fmtRange(pvLo,pvHi,'vac') : fmtD(pvLo,'vac'));
+    setEl('r-ann-'+k, band ? fmtRange(annLo,annHi,'ann') : fmtD(annLo,'ann'));
+    setEl('r-nat-'+k, band ? fmtRange(natLo,natHi,'nat') : fmtD(natLo,'nat'));
+  });
+  document.querySelectorAll('[data-colcell]').forEach(el=>{
+    el.classList.toggle('ct-col-active', el.dataset.colcell===c);
+  });
+
+  // National section
+  setEl('nat-A', fmtD(r.natA,'nat'));
+  setEl('nat-B', fmtD(r.natB,'nat'));
+  setEl('nat-C', fmtD(r.natC,'nat'));
+  setEl('nat-D', fmtRange(r.natD_lo, r.natD_hi,'nat'));
+
+  // Detail section
+  setEl('detail-tier', 'Col '+c+' · '+TIER_NAME[c]);
+  animate('d-V', r.V, v=>Math.round(v).toLocaleString());
+  animate('d-pd', r.patDays, v=>Math.round(v).toLocaleString()+' pt-days');
+  setEl('d-bm', (r.b_nat*100).toFixed(2)+'%'+(r.fac?' / '+(r.fac.b_fac*100).toFixed(2)+'% (fac)':''));
+  setEl('d-oig', c==='A'?'None':c==='B'?'÷0.35 (OIG 2025)':c==='C'?'÷0.14 (OIG 2012)':'÷0.35 (low) / ÷0.14 (high)');
+  setEl('d-M', c==='D'?r.M.toFixed(1)+'× ('+r.own.toUpperCase()+')':'— (Col D only)');
+  setEl('d-pervac', isBand ? fmtRange(r.pvD_lo,r.pvD_hi,'vac') : fmtD({A:r.pvA,B:r.pvB,C:r.pvC}[c],'vac'));
+
+  // Sensitivity tab
+  const sens = [
+    { or:1.03, excess:0.03, id:'lo'  },
+    { or:1.07, excess:0.07, id:'mid' },
+    { or:1.12, excess:0.12, id:'hi'  }
+  ];
+  sens.forEach(s=>{
+    const pv = r.D * r.PPD * (r.b_nat / CAPTURE_B) * s.excess;
+    const an = r.V * pv;
+    const nt = NATIONAL_DEP * pv;
+    setEl('sens-b-'+s.id,    fmtD(pv,'vac'));
+    setEl('sens-ann-'+s.id,  fmtD(an,'ann'));
+    setEl('sens-nat-'+s.id,  fmtD(nt,'nat'));
+    setEl('sens-dep',        Math.round(r.V).toLocaleString());
+    setEl('sens-dep-mid',    Math.round(r.V).toLocaleString());
+    setEl('sens-dep-hi',     Math.round(r.V).toLocaleString());
+    // full sensitivity table
+    setEl('st-vac-'+s.id,   fmtD(pv,'vac'));
+    setEl('st-ann-'+s.id,   fmtD(an,'ann'));
+    setEl('st-nat-'+s.id,   fmtD(nt,'nat'));
+  });
+  setEl('griff-factor', Math.pow(1.03, r.D).toFixed(1));
+
+  drawChart(r);
+}
+
+// ── Chart ──
+function drawChart(r){
+  const canvas = document.getElementById('chart');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio||1;
+  const W = (canvas.parentElement.clientWidth)||620, H = 260;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,W,H);
+
+  const cols = ['A','B','C','D'];
+  const annVals = { A:r.annA, B:r.annB, C:r.annC };
+  const maxV = Math.max(r.annA, r.annB, r.annC, r.annD_hi, 1);
+  const padL=56, padR=14, padT=28, padB=42;
+  const cW=W-padL-padR, cH=H-padT-padB, slot=cW/cols.length, barW=slot*0.52;
+  const yOf = v => padT+cH-(v/maxV*cH);
+
+  for(let i=0;i<=4;i++){
+    const y=padT+cH-(cH*i/4);
+    ctx.strokeStyle='rgba(240,235,226,.055)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(padL+cW,y); ctx.stroke();
+    ctx.fillStyle='rgba(240,235,226,.30)'; ctx.font='10px Space Mono,monospace'; ctx.textAlign='right';
+    ctx.fillText(fmtD(maxV*i/4,'ann'), padL-8, y+3);
+  }
+
+  cols.forEach((k,i)=>{
+    const x=padL+slot*i+(slot-barW)/2;
+    const active=k===currentCol;
+    const band=(k==='D');
+    const loV = band ? r.annD_lo : annVals[k];
+    const hiV = band ? r.annD_hi : annVals[k];
+    const yLo=yOf(loV), yHi=yOf(hiV), base=padT+cH;
+    ctx.fillStyle=COLHEX[k];
+
+    if(band){
+      ctx.globalAlpha=active?0.38:0.13;
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,yHi,barW,base-yHi,[5,5,0,0]);ctx.fill();}
+      else ctx.fillRect(x,yHi,barW,base-yHi);
+      ctx.globalAlpha=active?1:0.30;
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,yLo,barW,base-yLo,[5,5,0,0]);ctx.fill();}
+      else ctx.fillRect(x,yLo,barW,base-yLo);
+      ctx.globalAlpha=active?1:0.52;
+      ctx.fillStyle=active?'rgba(240,235,226,.88)':COLHEX[k];
+      ctx.fillRect(x,yHi,barW,2);
+      if(active){
+        ctx.globalAlpha=1; ctx.textAlign='center';
+        ctx.fillStyle='rgba(240,235,226,.95)'; ctx.font='bold 10px Plus Jakarta Sans,sans-serif';
+        ctx.fillText(fmtD(hiV,'ann'), x+barW/2, yHi-7);
+        ctx.fillStyle='rgba(240,235,226,.50)'; ctx.font='9px Space Mono,monospace';
+        ctx.fillText(fmtD(loV,'ann'), x+barW/2, Math.min(yLo-4,base-6));
+      }
+    } else {
+      ctx.globalAlpha=active?1:0.30;
+      if(ctx.roundRect){ctx.beginPath();ctx.roundRect(x,yLo,barW,base-yLo,[5,5,0,0]);ctx.fill();}
+      else ctx.fillRect(x,yLo,barW,base-yLo);
+      if(active){
+        ctx.globalAlpha=1;
+        ctx.fillStyle='rgba(240,235,226,.95)'; ctx.font='bold 11px Plus Jakarta Sans,sans-serif'; ctx.textAlign='center';
+        ctx.fillText(fmtD(loV,'ann'), x+barW/2, yLo-8);
+      }
+    }
+    ctx.globalAlpha=1;
+    ctx.fillStyle=active?'rgba(240,235,226,.85)':'rgba(240,235,226,.38)';
+    ctx.font='10px Space Mono,monospace'; ctx.textAlign='center';
+    ctx.fillText('Col '+k, x+barW/2, padT+cH+18);
+  });
+}
+
+// ── Interactions ──
+function selectCol(col){
+  currentCol=col;
+  document.querySelectorAll('#rail .seg').forEach(s=>s.classList.toggle('active', s.dataset.col===col));
+  document.querySelectorAll('#legend .leg').forEach(l=>l.classList.toggle('on', l.dataset.col===col));
+  document.getElementById('rail-note').innerHTML = TIER_NOTE[col];
+  render();
+}
+document.querySelectorAll('#rail .seg').forEach(s=>s.addEventListener('click',()=>selectCol(s.dataset.col)));
+document.querySelectorAll('#legend .leg').forEach(l=>l.addEventListener('click',()=>selectCol(l.dataset.col)));
+
+function syncRange(id){
+  const num=document.getElementById(id), rng=document.getElementById(id+'-r');
+  const setFill=()=>{ if(rng){ const p=(rng.value-rng.min)/(rng.max-rng.min)*100; rng.style.setProperty('--p',p+'%'); }};
+  if(num) num.addEventListener('input',()=>{ if(rng) rng.value=num.value; setFill(); render(); });
+  if(rng) rng.addEventListener('input',()=>{ if(num) num.value=rng.value; setFill(); render(); });
+  setFill();
+}
+['fte','turnover','vacancy_days','ppd','b_mort_nat'].forEach(syncRange);
+const facInput=document.getElementById('b_mort_fac');
+if(facInput) facInput.addEventListener('input', render);
+
+document.querySelectorAll('#ownership-group .radio-opt').forEach(lab=>{
+  lab.addEventListener('click',()=>{
+    document.querySelectorAll('#ownership-group .radio-opt').forEach(o=>o.classList.remove('sel'));
+    lab.classList.add('sel');
+    lab.querySelector('input').checked=true;
+    document.querySelectorAll('#supp-body tr').forEach(tr=>{
+      tr.style.background=tr.dataset.own===lab.dataset.own?'rgba(123,184,190,.05)':'';
+    });
+    render();
+  });
+});
+
+document.querySelectorAll('#tabbar .tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('#tabbar .tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.tabpanel').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('panel-'+t.dataset.tab).classList.add('active');
+  });
+});
+
+function copyResults(){
+  const r=compute(), c=currentCol, band=(c==='D');
+  const annStr = band ? fmtRange(r.annD_lo,r.annD_hi,'ann') : fmtD({A:r.annA,B:r.annB,C:r.annC}[c],'ann');
+  const txt='MAM v1.0 · Col '+c+' ('+TIER_NAME[c]+') | FTE '+r.fte+' | Turnover '+r.turnover+'%'
+    +' | V='+Math.round(r.V)+' dep. | Annual deaths: '+annStr
+    +' | National (534,047 dep.) Col B: '+fmtD(r.natB,'nat')
+    +' | B_mort_nat: '+(r.b_nat*100).toFixed(2)+'%'
+    +(r.fac?' | B_mort_fac: '+(r.fac.b_fac*100).toFixed(2)+'% (Δ '+(r.fac.b_delta>0?'+':'')+  (r.fac.b_delta*100).toFixed(2)+'%)':'');
+  const done=()=>{ const b=document.getElementById('copy-btn'); const o=b.textContent; b.textContent='✓ Copied'; setTimeout(()=>b.textContent=o,1500); };
+  if(navigator.clipboard) navigator.clipboard.writeText(txt).then(done).catch(done); else done();
+}
+
+function resetDefaults(){
+  ['fte','turnover','vacancy_days','ppd','b_mort_nat'].forEach(id=>{
+    const defs={fte:600,turnover:17.6,vacancy_days:78,ppd:0.5,b_mort_nat:2.9};
+    const n=document.getElementById(id), rg=document.getElementById(id+'-r');
+    if(n) n.value=defs[id]; if(rg){ rg.value=defs[id]; rg.dispatchEvent(new Event('input')); }
+  });
+  const fi=document.getElementById('b_mort_fac'); if(fi) fi.value='';
+  document.querySelector('.radio-opt[data-own=np]').click();
+  selectCol('B');
+}
+
+window.addEventListener('resize', ()=>{ drawChart(compute()); });
+
+// ── Init ──
+selectCol('B');
+document.querySelector('#supp-body tr[data-own=np]').style.background='rgba(123,184,190,.05)';
+</script>
+</body>
+</html>
